@@ -1,0 +1,54 @@
+name: MonitorizacionWebs
+
+on:
+  schedule:
+    - cron: '5 4 * * *'   # Cada día a las 04:05 UTC
+  workflow_dispatch:        # Permitir ejecución manual
+
+jobs:
+  check-sites:
+    runs-on: ubuntu-22.04
+
+    env:
+      TZ: Europe/Madrid
+      URLS_FILE: monitoring/urls_to_check.txt
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Run health check
+        id: healthcheck
+        run: |
+          python .github/scripts/check_urls.py
+
+      # Solo se ejecuta si el paso anterior ha fallado (por errores en las webs)
+      - name: Send alert email if failure
+        if: failure()          # muy importante
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "ALERTA: Alguna web de agilitydivertidog.com ha fallado"
+          to: "jescos@agilitydivertidog.com"
+          from: "Monitor GitHub <${{ secrets.SMTP_USER }}>"
+          secure: true
+          body: |
+            Se ha detectado un error en la monitorización de alguna de las URLs configuradas.
+
+            Revisa el log del workflow en GitHub Actions para ver el detalle.
+          attachments: |
+            monitoring_result.txt
