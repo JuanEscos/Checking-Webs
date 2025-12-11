@@ -26,16 +26,35 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests
+          pip install -r requirements.txt
 
       - name: Run health check
         id: healthcheck
         run: |
           python .github/scripts/check_urls.py
 
-      # Solo se ejecuta si el paso anterior ha fallado (por errores en las webs)
+      # ✅ CORREO DE TODO CORRECTO (SOLO EN EJECUCIONES MANUALES)
+      - name: Send OK email on success (manual runs only)
+        if: ${{ success() && github.event_name == 'workflow_dispatch' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: "OK: Monitorización de webs agilitydivertidog.com correcta"
+          to: "jescos@agilitydivertidog.com"
+          from: "Monitor GitHub <${{ secrets.SMTP_USER }}>"
+          secure: true
+          body: |
+            La monitorización de las URLs configuradas ha finalizado correctamente.
+
+            No se ha detectado ningún error en las webs monitorizadas.
+            (Este correo solo se envía en ejecuciones manuales de prueba.)
+
+      # ❌ CORREO DE ERROR (DIARIO + MANUAL)
       - name: Send alert email if failure
-        if: failure()          # muy importante
+        if: failure()
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_HOST }}
