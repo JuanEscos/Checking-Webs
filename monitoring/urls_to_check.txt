@@ -1,0 +1,8 @@
+# Páginas públicas principales
+https://agilitydivertidog.com/
+https://agilitydivertidog.com/NewWeb/
+https://agilitydivertidog.com/NewWeb/Privado/Menus.php   # si es accesible sin login
+https://agilitydivertidog.com/pruebas/
+https://agilitydivertidog.com/instalaciones/
+
+# Aquí puedes ir añadiendo todas las URLs de los menús de WordPress y las que estén en Menus.php
