@@ -36,10 +36,11 @@ jobs:
       # ✅ CORREO DE TODO CORRECTO (SOLO EN EJECUCIONES MANUALES)
       - name: Send OK email on success (manual runs only)
         if: ${{ success() && github.event_name == 'workflow_dispatch' }}
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@v6
         with:
           server_address: ${{ secrets.SMTP_HOST }}
-          server_port: ${{ secrets.SMTP_PORT }}
+          server_port: ${{ secrets.SMTP_PORT }}   # 465
+          secure: true
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASS }}
           subject: "OK: Monitorización de webs agilitydivertidog.com correcta"
@@ -55,10 +56,11 @@ jobs:
       # ❌ CORREO DE ERROR (DIARIO + MANUAL)
       - name: Send alert email if failure
         if: failure()
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@v6
         with:
           server_address: ${{ secrets.SMTP_HOST }}
-          server_port: ${{ secrets.SMTP_PORT }}
+          server_port: ${{ secrets.SMTP_PORT }}   # 465
+          secure: true
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASS }}
           subject: "ALERTA: Alguna web de agilitydivertidog.com ha fallado"
