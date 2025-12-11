@@ -1,8 +1,46 @@
 # Páginas públicas principales
 https://agilitydivertidog.com/
-https://agilitydivertidog.com/NewWeb/
-https://agilitydivertidog.com/NewWeb/Privado/Menus.php   # si es accesible sin login
 https://agilitydivertidog.com/pruebas/
 https://agilitydivertidog.com/instalaciones/
 
-# Aquí puedes ir añadiendo todas las URLs de los menús de WordPress y las que estén en Menus.php
+
+# Páginas privado
+https://agilitydivertidog.com/NewWeb/
+https://agilitydivertidog.com/NewWeb/Privado/Menus.php   # si es accesible sin login
+
+
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/Results_Estadist/CE_RFEC/Stat.php
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/Results_Estadist/VerResults
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/RSCE/VisorpdfPuntosCE.php
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/Vel_Biomec/
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/EventosProx
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/EvolAgility/EvolInscritos24-25.php
+
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/Results_Estadist/Results24_25.php
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/Results_Estadist/The_best.php
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/Results_Estadist/BinomCtes.php
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/Results_Estadist/Canarias.php
+
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/RSCE/Participantes/250802RIALP/InscGrado_Cat.php
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/RSCE/Participantes/250802RIALP/Clubs.php
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/RSCE/Participantes/250802RIALP/Razas.php
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/RSCE/Participantes/241206CE2024/Descriptores.php
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/RSCE/Participantes/241206CE2024/Participantes.php
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/RSCE/Participantes/241206CE2024/Clubes.php
+https://agilitydivertidog.com/NewWeb/Privado/Competiciones/RSCE/Participantes/241206CE2024/Razas.php
+
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/Encuestas/SelectivasFormat/SelectivasFormat.php
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/Encuestas/SelectivasFormat/graph.php
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/Encuestas/Agilitystas/Encuesta.php
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/Encuestas/Agilitystas/EncuestaResultados.php
+
+https://agilitydivertidog.com/NewWeb/Privado/Tools/Speed/Speed.php
+https://agilitydivertidog.com/NewWeb/Privado/Tools/Cuartil/Cuartil.php
+
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/FtRh/FaltaVel_Logistica.php
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/FtRh/RehusesTiempo.php
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/EdadBC/EdadRendimientoBC.php
+http://agilitydivertidog.com/NewWeb/Privado/Investigacion/Dog_Names/Dog_Names.php
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/EvolAgility/NBinom22-24.php
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/EvolAgility/Compara23_24.php
+https://agilitydivertidog.com/NewWeb/Privado/Investigacion/EvolAgility/BinomEvol2019_2024.php
