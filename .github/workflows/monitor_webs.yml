@@ -36,35 +36,34 @@ jobs:
       # ✅ CORREO DE TODO CORRECTO (SOLO EN EJECUCIONES MANUALES)
       - name: Send OK email on success (manual runs only)
         if: ${{ success() && github.event_name == 'workflow_dispatch' }}
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@v6
         with:
-          server_address: ${{ secrets.SMTP_HOST }}
-          server_port: ${{ secrets.SMTP_PORT }}
+          server_address: agilitydivertidog-com.correoseguro.dinaserver.com
+          server_port: 465
+          secure: true
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASS }}
           subject: "OK: Monitorización de webs agilitydivertidog.com correcta"
           to: "jescos@agilitydivertidog.com"
           from: "Monitor GitHub <${{ secrets.SMTP_USER }}>"
-          secure: true
           body: |
             La monitorización de las URLs configuradas ha finalizado correctamente.
 
             No se ha detectado ningún error en las webs monitorizadas.
             (Este correo solo se envía en ejecuciones manuales de prueba.)
 
-      # ❌ CORREO DE ERROR (DIARIO + MANUAL)
       - name: Send alert email if failure
         if: failure()
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@v6
         with:
-          server_address: ${{ secrets.SMTP_HOST }}
-          server_port: ${{ secrets.SMTP_PORT }}
+          server_address: agilitydivertidog-com.correoseguro.dinaserver.com
+          server_port: 465
+          secure: true
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASS }}
           subject: "ALERTA: Alguna web de agilitydivertidog.com ha fallado"
           to: "jescos@agilitydivertidog.com"
           from: "Monitor GitHub <${{ secrets.SMTP_USER }}>"
-          secure: true
           body: |
             Se ha detectado un error en la monitorización de alguna de las URLs configuradas.
 
