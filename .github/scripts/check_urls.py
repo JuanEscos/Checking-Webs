@@ -1,8 +1,12 @@
 import os
 import sys
+import time
 import requests
 
 URLS_FILE = os.environ.get("URLS_FILE", "monitoring/urls_to_check.txt")
+
+# segundos entre peticiones para no disparar tanto el WAF
+SLEEP_BETWEEN_REQUESTS = float(os.environ.get("SLEEP_BETWEEN_REQUESTS", "1.0"))
 
 def load_urls(path):
     urls = []
@@ -15,11 +19,21 @@ def load_urls(path):
     return urls
 
 def check_url(url, timeout=15):
+    headers = {
+        "User-Agent": "AgilityDivertidog-Healthcheck/1.0 (+https://agilitydivertidog.com)"
+    }
     try:
-        resp = requests.get(url, timeout=timeout)
-        if resp.status_code >= 400:
-            return False, f"ERROR HTTP {resp.status_code}"
-        return True, f"OK {resp.status_code}"
+        resp = requests.get(url, timeout=timeout, headers=headers)
+        status = resp.status_code
+
+        # 429 = Too Many Requests → lo tratamos como "warning", no rompe el healthcheck
+        if status == 429:
+            return True, "WARNING 429 Too Many Requests (servidor responde, tratado como OK)"
+
+        if status >= 400:
+            return False, f"ERROR HTTP {status}"
+
+        return True, f"OK {status}"
     except Exception as e:
         return False, f"EXCEPCIÓN: {type(e).__name__}: {e}"
 
@@ -31,22 +45,34 @@ def main():
 
     print("=== RESULTADO MONITORIZACIÓN WEBS ===")
     failed = []
+    warnings = []
+
     for url in urls:
         ok, info = check_url(url)
         line = f"{url} --> {info}"
         print(line)
-        if not ok:
+
+        if "WARNING 429" in info:
+            warnings.append(line)
+        elif not ok:
             failed.append(line)
 
-    if failed:
-        # Guardamos un pequeño resumen en un archivo para adjuntarlo al correo
-        with open("monitoring_result.txt", "w", encoding="utf-8") as f:
-            f.write("Se han detectado errores en las siguientes URLs:\n\n")
-            f.write("\n".join(failed))
-            f.write("\n\nResultado completo:\n\n")
-            # (podríamos volver a escribir todo, pero con el resumen vale)
+        time.sleep(SLEEP_BETWEEN_REQUESTS)
 
-        # Salimos con código 1 para que el job cuente como fallo
+    # generamos un resumen para adjuntar en el correo SI hay errores de verdad
+    if failed or warnings:
+        with open("monitoring_result.txt", "w", encoding="utf-8") as f:
+            if failed:
+                f.write("❌ ERRORES CRÍTICOS:\n\n")
+                f.write("\n".join(failed))
+                f.write("\n\n")
+            if warnings:
+                f.write("⚠️ ADVERTENCIAS (no rompen el healthcheck):\n\n")
+                f.write("\n".join(warnings))
+                f.write("\n")
+
+    # solo marcamos fallo si hay errores críticos de verdad (404, 500, timeout, etc.)
+    if failed:
         sys.exit(1)
 
     sys.exit(0)
