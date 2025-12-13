@@ -2,11 +2,14 @@ import os
 import sys
 import time
 import requests
+from bs4 import BeautifulSoup
 
 URLS_FILE = os.environ.get("URLS_FILE", "monitoring/urls_to_check.txt")
-
-# segundos entre peticiones para no disparar tanto el WAF
 SLEEP_BETWEEN_REQUESTS = float(os.environ.get("SLEEP_BETWEEN_REQUESTS", "1.0"))
+
+LOGIN_URL = "https://agilitydivertidog.com/NewWeb/login.php"
+USERNAME = os.environ.get("MONITOR_USER")
+PASSWORD = os.environ.get("MONITOR_PASS")
 
 def load_urls(path):
     urls = []
@@ -18,83 +21,103 @@ def load_urls(path):
             urls.append(line)
     return urls
 
-def check_url(url, timeout=15):
-    headers = {
-        "User-Agent": "AgilityDivertidog-Healthcheck/1.0 (+https://agilitydivertidog.com)"
+
+def login(session):
+    """Realiza login en tu panel privado."""
+    payload = {
+        "email": USERNAME,
+        "password": PASSWORD
     }
+
+    resp = session.post(LOGIN_URL, data=payload, timeout=15)
+
+    if "Incorrecto" in resp.text or "error" in resp.text.lower():
+        return False, "Credenciales incorrectas o login fallido"
+    if resp.status_code != 200:
+        return False, f"Error HTTP tras login: {resp.status_code}"
+
+    return True, "Login OK"
+
+
+def check_url(session, url):
+    """Comprueba una URL ya autenticado."""
     try:
-        resp = requests.get(url, timeout=timeout, headers=headers)
+        resp = session.get(url, timeout=15)
         status = resp.status_code
 
-        # 429 = Too Many Requests → lo tratamos como "warning"
         if status == 429:
-            return True, "WARNING 429 Too Many Requests (servidor responde, tratado como OK)"
+            return True, "WARNING 429 Too Many Requests"
 
-        # Errores HTTP "serios"
         if status >= 400:
             return False, f"ERROR HTTP {status}"
 
-        # --- DETECCIÓN DE WARNINGS / ERRORES EN EL CONTENIDO HTML ---
-        body = resp.text  # analizamos todo el HTML
+        body = resp.text
 
-        error_patterns = [
-            "Warning:",            # cualquier Warning de PHP
-            "Fatal error",         # errores fatales
-            "Parse error",         # errores de parseo
-            "Uncaught Exception",  # excepciones no capturadas
+        # Detectar errores PHP en contenido
+        patterns = [
+            "Warning:",
+            "Fatal error",
+            "Parse error",
+            "Uncaught Exception",
             "Uncaught Error",
         ]
 
-        patterns_encontrados = [p for p in error_patterns if p in body]
+        found = [p for p in patterns if p in body]
 
-        if patterns_encontrados:
-            return False, "ERROR CONTENIDO HTML: se han encontrado patrones de error: " + ", ".join(patterns_encontrados)
+        if found:
+            return False, f"ERROR CONTENIDO HTML: {', '.join(found)}"
 
-        # Si todo bien
         return True, f"OK {status}"
 
     except Exception as e:
         return False, f"EXCEPCIÓN: {type(e).__name__}: {e}"
 
+
 def main():
-    urls = load_urls(URLS_FILE)
-    if not urls:
-        print("No se han encontrado URLs en el fichero. Revisa:", URLS_FILE)
+    if not USERNAME or not PASSWORD:
+        print("Faltan credenciales MONITOR_USER / MONITOR_PASS")
         sys.exit(1)
 
-    print("=== RESULTADO MONITORIZACIÓN WEBS ===")
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": "AgilityDivertidog-Healthcheck/1.0 (+https://agilitydivertidog.com)"
+    })
+
+    # LOGIN
+    ok, info = login(session)
+    print("LOGIN:", info)
+    if not ok:
+        sys.exit(1)
+
+    urls = load_urls(URLS_FILE)
+
     failed = []
     warnings = []
 
     for url in urls:
-        ok, info = check_url(url)
-        line = f"{url} --> {info}"
-        print(line)
+        ok, info = check_url(session, url)
+        print(url, "-->", info)
 
-        if "WARNING 429" in info:
-            warnings.append(line)
+        if "WARNING" in info:
+            warnings.append(f"{url} --> {info}")
         elif not ok:
-            failed.append(line)
+            failed.append(f"{url} --> {info}")
 
         time.sleep(SLEEP_BETWEEN_REQUESTS)
 
-    # generamos un resumen para adjuntar en el correo SI hay errores de verdad
-    if failed or warnings:
-        with open("monitoring_result.txt", "w", encoding="utf-8") as f:
-            if failed:
-                f.write("❌ ERRORES CRÍTICOS:\n\n")
-                f.write("\n".join(failed))
-                f.write("\n\n")
-            if warnings:
-                f.write("⚠️ ADVERTENCIAS (no rompen el healthcheck):\n\n")
-                f.write("\n".join(warnings))
-                f.write("\n")
+    # Escribir resumen
+    with open("monitoring_result.txt", "w", encoding="utf-8") as f:
+        if failed:
+            f.write("❌ ERRORES CRÍTICOS:\n" + "\n".join(failed) + "\n\n")
+        if warnings:
+            f.write("⚠️ ADVERTENCIAS:\n" + "\n".join(warnings) + "\n")
 
-    # solo marcamos fallo si hay errores críticos de verdad (404, 500, timeout, etc.)
+    # Solo fallar si hay errores críticos
     if failed:
         sys.exit(1)
 
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
