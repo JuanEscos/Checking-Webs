@@ -12,7 +12,9 @@ jobs:
     env:
       TZ: Europe/Madrid
       URLS_FILE: monitoring/urls_to_check.txt
-
+      MONITOR_USER: ${{ secrets.MONITOR_USER }}
+      MONITOR_PASS: ${{ secrets.MONITOR_PASS }}
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
