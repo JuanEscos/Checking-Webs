@@ -26,14 +26,34 @@ def check_url(url, timeout=15):
         resp = requests.get(url, timeout=timeout, headers=headers)
         status = resp.status_code
 
-        # 429 = Too Many Requests → lo tratamos como "warning", no rompe el healthcheck
+        # 429 = Too Many Requests → lo tratamos como "warning"
         if status == 429:
             return True, "WARNING 429 Too Many Requests (servidor responde, tratado como OK)"
 
+        # Si el código HTTP es 4xx/5xx (distinto de 429) → error real
         if status >= 400:
             return False, f"ERROR HTTP {status}"
 
+        # --- AQUÍ VIENE LA DETECCIÓN DE "WARNINGS" EN EL HTML ---
+        body_snippet = resp.text[:4000]  # miramos solo los primeros 4000 caracteres
+
+        error_patterns = [
+            "Warning: include(",
+            "Warning: include_once(",
+            "Warning: require(",
+            "Warning: require_once(",
+            "Fatal error",
+            "Parse error",
+            "Uncaught Exception",
+        ]
+
+        for pattern in error_patterns:
+            if pattern in body_snippet:
+                return False, f"ERROR CONTENIDO HTML: se ha encontrado '{pattern}'"
+
+        # Si todo OK
         return True, f"OK {status}"
+
     except Exception as e:
         return False, f"EXCEPCIÓN: {type(e).__name__}: {e}"
 
