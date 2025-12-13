@@ -30,28 +30,27 @@ def check_url(url, timeout=15):
         if status == 429:
             return True, "WARNING 429 Too Many Requests (servidor responde, tratado como OK)"
 
-        # Si el código HTTP es 4xx/5xx (distinto de 429) → error real
+        # Errores HTTP "serios"
         if status >= 400:
             return False, f"ERROR HTTP {status}"
 
-        # --- AQUÍ VIENE LA DETECCIÓN DE "WARNINGS" EN EL HTML ---
-        body_snippet = resp.text[:4000]  # miramos solo los primeros 4000 caracteres
+        # --- DETECCIÓN DE WARNINGS / ERRORES EN EL CONTENIDO HTML ---
+        body = resp.text  # analizamos todo el HTML
 
         error_patterns = [
-            "Warning: include(",
-            "Warning: include_once(",
-            "Warning: require(",
-            "Warning: require_once(",
-            "Fatal error",
-            "Parse error",
-            "Uncaught Exception",
+            "Warning:",            # cualquier Warning de PHP
+            "Fatal error",         # errores fatales
+            "Parse error",         # errores de parseo
+            "Uncaught Exception",  # excepciones no capturadas
+            "Uncaught Error",
         ]
 
-        for pattern in error_patterns:
-            if pattern in body_snippet:
-                return False, f"ERROR CONTENIDO HTML: se ha encontrado '{pattern}'"
+        patterns_encontrados = [p for p in error_patterns if p in body]
 
-        # Si todo OK
+        if patterns_encontrados:
+            return False, "ERROR CONTENIDO HTML: se han encontrado patrones de error: " + ", ".join(patterns_encontrados)
+
+        # Si todo bien
         return True, f"OK {status}"
 
     except Exception as e:
