@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import requests
-from bs4 import BeautifulSoup
 
 URLS_FILE = os.environ.get("URLS_FILE", "monitoring/urls_to_check.txt")
 SLEEP_BETWEEN_REQUESTS = float(os.environ.get("SLEEP_BETWEEN_REQUESTS", "1.0"))
@@ -10,6 +9,7 @@ SLEEP_BETWEEN_REQUESTS = float(os.environ.get("SLEEP_BETWEEN_REQUESTS", "1.0"))
 LOGIN_URL = "https://agilitydivertidog.com/NewWeb/login.php"
 USERNAME = os.environ.get("MONITOR_USER")
 PASSWORD = os.environ.get("MONITOR_PASS")
+
 
 def load_urls(path):
     urls = []
@@ -24,19 +24,31 @@ def load_urls(path):
 
 def login(session):
     """Realiza login en tu panel privado."""
+    if not USERNAME or not PASSWORD:
+        return False, "Faltan MONITOR_USER / MONITOR_PASS en los secrets"
+
     payload = {
-        "email": USERNAME,
-        "password": PASSWORD
+        "email": USERNAME,     # <-- campos típicos de tu login
+        "password": PASSWORD,
     }
 
-    resp = session.post(LOGIN_URL, data=payload, timeout=15)
+    try:
+        resp = session.post(LOGIN_URL, data=payload, timeout=15)
 
-    if "Incorrecto" in resp.text or "error" in resp.text.lower():
-        return False, "Credenciales incorrectas o login fallido"
-    if resp.status_code != 200:
-        return False, f"Error HTTP tras login: {resp.status_code}"
+        # Comprobaciones básicas de login
+        if resp.status_code != 200:
+            return False, f"Error HTTP tras login: {resp.status_code}"
 
-    return True, "Login OK"
+        text_lower = resp.text.lower()
+        # Ajusta estas cadenas si tu login muestra otros mensajes de error
+        if "incorrecto" in text_lower or "error" in text_lower:
+            return False, "Credenciales incorrectas o login fallido"
+
+        # Si no vemos mensajes de error obvios, asumimos que el login ha ido bien
+        return True, "Login OK"
+
+    except Exception as e:
+        return False, f"EXCEPCIÓN en login: {type(e).__name__}: {e}"
 
 
 def check_url(session, url):
@@ -45,6 +57,7 @@ def check_url(session, url):
         resp = session.get(url, timeout=15)
         status = resp.status_code
 
+        # 429 = Too Many Requests → lo tratamos como "warning"
         if status == 429:
             return True, "WARNING 429 Too Many Requests"
 
@@ -53,7 +66,7 @@ def check_url(session, url):
 
         body = resp.text
 
-        # Detectar errores PHP en contenido
+        # Detectar errores PHP en el contenido
         patterns = [
             "Warning:",
             "Fatal error",
@@ -65,7 +78,7 @@ def check_url(session, url):
         found = [p for p in patterns if p in body]
 
         if found:
-            return False, f"ERROR CONTENIDO HTML: {', '.join(found)}"
+            return False, "ERROR CONTENIDO HTML: " + ", ".join(found)
 
         return True, f"OK {status}"
 
@@ -83,34 +96,48 @@ def main():
         "User-Agent": "AgilityDivertidog-Healthcheck/1.0 (+https://agilitydivertidog.com)"
     })
 
-    # LOGIN
+    # --- LOGIN ---
     ok, info = login(session)
     print("LOGIN:", info)
     if not ok:
+        # Si el login falla, dejamos monitoring_result.txt con el motivo
+        with open("monitoring_result.txt", "w", encoding="utf-8") as f:
+            f.write("❌ ERROR EN LOGIN:\n")
+            f.write(info + "\n")
         sys.exit(1)
 
     urls = load_urls(URLS_FILE)
+    if not urls:
+        print("No se han encontrado URLs en", URLS_FILE)
+        sys.exit(1)
 
     failed = []
     warnings = []
 
+    print("=== RESULTADO MONITORIZACIÓN WEBS ===")
+
     for url in urls:
         ok, info = check_url(session, url)
-        print(url, "-->", info)
+        line = f"{url} --> {info}"
+        print(line)
 
         if "WARNING" in info:
-            warnings.append(f"{url} --> {info}")
+            warnings.append(line)
         elif not ok:
-            failed.append(f"{url} --> {info}")
+            failed.append(line)
 
         time.sleep(SLEEP_BETWEEN_REQUESTS)
 
     # Escribir resumen
     with open("monitoring_result.txt", "w", encoding="utf-8") as f:
         if failed:
-            f.write("❌ ERRORES CRÍTICOS:\n" + "\n".join(failed) + "\n\n")
+            f.write("❌ ERRORES CRÍTICOS:\n")
+            f.write("\n".join(failed))
+            f.write("\n\n")
         if warnings:
-            f.write("⚠️ ADVERTENCIAS:\n" + "\n".join(warnings) + "\n")
+            f.write("⚠️ ADVERTENCIAS:\n")
+            f.write("\n".join(warnings))
+            f.write("\n")
 
     # Solo fallar si hay errores críticos
     if failed:
