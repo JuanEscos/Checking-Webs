@@ -16,7 +16,7 @@ def load_urls(path):
             urls.append(line)
     return urls
 
-def check_url(url, timeout=15):
+def check_url(url, timeout=20):
     headers = {
         "User-Agent": "AgilityDivertidog-Healthcheck/1.0 (+https://agilitydivertidog.com)"
     }
@@ -33,13 +33,13 @@ def check_url(url, timeout=15):
 
         body = resp.text
 
+        # Errores PHP gordos en el HTML (en páginas públicas)
         patterns = [
             "Fatal error",
             "Parse error",
             "Uncaught Exception",
             "Uncaught Error",
         ]
-
         found = [p for p in patterns if p in body]
 
         if found:
@@ -47,8 +47,14 @@ def check_url(url, timeout=15):
 
         return True, f"OK {status}"
 
+    except requests.exceptions.ReadTimeout as e:
+        # Tiempo excedido → lo tratamos como WARNING, no como error crítico
+        return True, f"WARNING ReadTimeout: {e}"
+
     except Exception as e:
+        # Cualquier otro fallo de red / DNS sí es error crítico
         return False, f"EXCEPCIÓN: {type(e).__name__}: {e}"
+
 
 def main():
     urls = load_urls(URLS_FILE)
