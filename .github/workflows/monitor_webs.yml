@@ -1,6 +1,5 @@
 name: MonitorizacionWebs
 
-
 on:
   schedule:
     - cron: '5 4 * * *'   # Cada día a las 04:05 UTC
