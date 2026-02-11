@@ -10,7 +10,6 @@ https://agilitydivertidog.com/NewWeb/Privado/Menus.php   # si es accesible sin l
 
 
 https://agilitydivertidog.com/NewWeb/Privado/Competiciones/Results_Estadist/CE_RFEC/Stat.php
-https://agilitydivertidog.com/NewWeb/Privado/Competiciones/Results_Estadist/VerResults
 https://agilitydivertidog.com/NewWeb/Privado/Competiciones/RSCE/VisorpdfPuntosCE.php
 https://agilitydivertidog.com/NewWeb/Privado/Investigacion/Vel_Biomec/
 https://agilitydivertidog.com/NewWeb/Privado/Competiciones/EventosProx
